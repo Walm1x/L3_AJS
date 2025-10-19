@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Моя Страница</title>
+</head>
+<body>
+    <button onclick="doFirst()">Действие 1</button>
+    <button onclick="doSecond()">Действие 2</button>
+    <button onclick="doThird()">Действие 3</button>
+    <div id="resultArea"></div>
+
+    <script>
+        const API_BASE = 'https://jsonplaceholder.typicode.com';
+
+
+        function getData(url, cb) {
+            const req = new XMLHttpRequest();
+                  req.open('GET', url, true);
+                  req.onload = function() {
+                if (req.status === 200) {
+                   cb(null, JSON.parse(req.responseText));
+                } else {
+                    cb(new Error('Ошибка'), null);
+                }
+            };
+            req.onerror   = function() { cb(new Error('Сеть'), null); };
+            req.send();
+        }
+
+        function sortThePosts(cb) {
+            getData(API_BASE + '/posts', function(err, data) {
+                if (err) return cb(err);
+                const sortedData = data.sort((x, y) => y.title.length - x.title.length);
+                cb(null, sortedData);
+            });
+        }
+         async function filterUsers(){
+            const res = await fetch(API_BASE+'/users');
+            const users = await res.json();
+            return users.map(u => ({
+                id: u.id,
+                name: u.name,
+                username: u.username,
+                email: u.email,
+                phone: u.phone
+            }));
+        }
+
+        // async await для комментов
+        async function fetchCommentsAsync() {
+            const resp = await fetch(API_BASE+'/comments');
+            const comms = await resp.json();
+            return comms.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        async function fetchUncompletedTasks() {
+            const response = await fetch(API_BASE+'/todos');
+            const tasks = await response.json();
+            return tasks.filter(task => !task.completed);
+        }
+         async function fetchPostsAsync() {
+            const response = await fetch(API_BASE+'/posts');
+            const posts = await response.json();
+            return posts.sort((a, b) => b.title.length - a.title.length);
+        }
+         async function sortCommentsAsync() {
+            const resp = await fetch(API_BASE+'/comments');
+            const comments = await resp.json();
+            return comments.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        async function grabUsersAsync() {
+            const response = await fetch(API_BASE+'/users');
+            const users = await response.json();
+            return users.map(user => ({
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                phone: user.phone
+            }));
+        }
+         // async function для todo
+         async function getIncompleteTodos() {
+            const response = await fetch(API_BASE+'/todos');
+            const todos = await response.json();
+            return todos.filter(todo => !todo.completed);
+        }
+
+        function doFirst() {
+            const area = document.getElementById('resultArea');
+                  area.innerHTML = 'Загрузка...';
+
+            sortThePosts(function(error, posts) {
+                if (error) {
+                  area.innerHTML = 'Ошибка: ' + error;
+                    return;
+                }
+
+                getData(API_BASE + '/comments', function(error, comments) {
+                    if (error) {
+                        area.innerHTML = 'Ошибка: ' + error;
+                        return;
+                    }
+
+                    area.innerHTML = 'Коллбэки: Posts - ' + posts.length + ', Comments - ' + comments.length;
+                });
+            });
+        }
+
+         async function doSecond() {
+            const area = document.getElementById('resultArea');
+                  area.innerHTML = 'Загрузка...';
+            try {
+                const [users, todos] = await Promise.all([filterUsers(),fetchUncompletedTasks() ]);
+                area.innerHTML = 'Промисы: Users - ' + users.length + ', Todos - ' + todos.length;
+            } catch (error) {
+                area.innerHTML = 'Ошибка: ' + error;
+            }
+        }
+        async function doThird() {
+            const area = document.getElementById('resultArea');
+                  area.innerHTML = 'Загрузка...';
+
+            try {
+                const posts = await fetchPostsAsync();
+                const comments = await sortCommentsAsync();
+                 const users = await grabUsersAsync();
+                const todos = await getIncompleteTodos();
+
+              area.innerHTML = 'Async/Await Done!';
+            } catch (error) {
+                area.innerHTML = 'Error: ' + error;
+            }
+        }
+    </script>
+</body>
+</html>
