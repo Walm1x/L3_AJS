@@ -1,51 +1,69 @@
-const fetchDataWithCallback = (endpoint, processingCallback) => {
-    const baseUrl = 'https://jsonplaceholder.typicode.com';
-    const requestUrl = `${baseUrl}/${endpoint}`;
-
-    fetch(requestUrl)
+const fetchData = (url, callback) => {
+    fetch(url)
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.status}`);
+                throw new Error(`HTTP error! Status: ${response.status} for URL: ${url}`);
             }
             return response.json();
         })
-        .then(payload => {
-            processingCallback(null, payload);
-        })
+        .then(data => callback(null, data))
         .catch(error => {
-            console.error(`Failed to fetch data from ${requestUrl}:`, error);
-            processingCallback(error, null);
+            console.error(`Failed to fetch data from ${url}:`, error);
+            callback(error, null);
         });
 };
-
-const fetchAndSortPublications = (completionCallback) => {
-    fetchDataWithCallback('posts', (postError, retrievedPosts) => {
-        if (postError) {
-            return completionCallback(postError);
-        }
-
-        const sortedPublications = retrievedPosts.sort((itemA, itemB) => {
-            const titleLengthA = itemA.title ? itemA.title.length : 0;
-            const titleLengthB = itemB.title ? itemB.title.length : 0;
+const sortPostsByTitleLength = (posts, callback) => {
+    try {
+        const sortedPosts = posts.sort((a, b) => {
+            const titleLengthA = a.title ? a.title.length : 0;
+            const titleLengthB = b.title ? b.title.length : 0;
             return titleLengthB - titleLengthA;
         });
-
-        completionCallback(null, sortedPublications);
-    });
+        callback(null, sortedPosts);
+    } catch (error) {
+        console.error('Error sorting posts:', error);
+        callback(error, null);
+    }
 };
-
-const retrieveAndOrderComments = (completionCallback) => {
-    fetchDataWithCallback('comments', (commentError, retrievedComments) => {
-        if (commentError) {
-            return completionCallback(commentError);
-        }
-
-        const orderedComments = retrievedComments.sort((commentItemA, commentItemB) => {
-            const nameA = commentItemA.name || '';
-            const nameB = commentItemB.name || '';
+const sortCommentsByName = (comments, callback) => {
+    try {
+        const sortedComments = comments.sort((a, b) => {
+            const nameA = a.name || '';
+            const nameB = b.name || '';
             return nameA.localeCompare(nameB);
         });
-
-        completionCallback(null, orderedComments);
+        callback(null, sortedComments);
+    } catch (error) {
+        console.error('Error sorting comments:', error);
+        callback(error, null);
+    }
+};
+const processPosts = (callback) => {
+    const postsUrl = 'https://jsonplaceholder.typicode.com/posts';
+    fetchData(postsUrl, (fetchError, posts) => {
+        if (fetchError) {
+            return callback(fetchError);
+        }
+        sortPostsByTitleLength(posts, (sortError, sortedPosts) => {
+            if (sortError) {
+                return callback(sortError);
+            }
+            callback(null, sortedPosts);
+        });
     });
 };
+const processComments = (callback) => {
+    const commentsUrl = 'https://jsonplaceholder.typicode.com/comments';
+    fetchData(commentsUrl, (fetchError, comments) => {
+        if (fetchError) {
+            return callback(fetchError);
+        }
+        sortCommentsByName(comments, (sortError, sortedComments) => {
+            if (sortError) {
+                return callback(sortError);
+            }
+            callback(null, sortedComments);
+        });
+    });
+};
+});
