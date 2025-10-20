@@ -1,31 +1,47 @@
+const fetchData = async (url) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+};
+
+const sortPosts = (posts) => {
+    return posts.sort((a, b) => (b.title?.length || 0) - (a.title?.length || 0));
+};
+
+const sortComments = (comments) => {
+    return comments.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+};
+
+const transformUsers = (users) => {
+    return users.map(user => ({
+        userId: user.id,
+        fullName: user.name,
+        alias: user.username,
+        contactEmail: user.email,
+        telephoneNumber: user.phone
+    }));
+};
+
+const filterTodos = (todos) => {
+    return todos.filter(todo => !todo.completed);
+};
+
 const manageDataFlow = async () => {
     const dataEndpoint = 'https://jsonplaceholder.typicode.com';
 
-    const postsData = await fetch(`${dataEndpoint}/posts`).then(response => response.json());
-    const sortedPostsContent = postsData.sort((postOne, postTwo) => {
-        const lenOne = postOne.title ? postOne.title.length : 0;
-        const lenTwo = postTwo.title ? postTwo.title.length : 0;
-        return lenTwo - lenOne;
-    });
+    const postsData = await fetchData(`${dataEndpoint}/posts`);
+    const sortedPostsContent = sortPosts(postsData);
 
-    const commentsData = await fetch(`${dataEndpoint}/comments`).then(response => response.json());
-    const orderedCommentsList = commentsData.sort((commentOne, commentTwo) => {
-        const nameOne = commentOne.name || '';
-        const nameTwo = commentTwo.name || '';
-        return nameOne.localeCompare(nameTwo);
-    });
+    const commentsData = await fetchData(`${dataEndpoint}/comments`);
+    const orderedCommentsList = sortComments(commentsData);
 
-    const usersRawData = await fetch(`${dataEndpoint}/users`).then(response => response.json());
-    const userProfileData = usersRawData.map(userData => ({
-        identifier: userData.id,
-        displayName: userData.name,
-        handle: userData.username,
-        contactInfo: userData.email,
-        telephoneNumber: userData.phone
-    }));
+    const usersRawData = await fetchData(`${dataEndpoint}/users`);
+    const userProfileData = transformUsers(usersRawData);
 
-    const todosRawData = await fetch(`${dataEndpoint}/todos`).then(response => response.json());
-    const incompleteTasksList = todosRawData.filter(task => !task.completed);
+    const todosRawData = await fetchData(`${dataEndpoint}/todos`);
+    const incompleteTasksList = filterTodos(todosRawData);
 
     return {
         sortedPostsContent,
